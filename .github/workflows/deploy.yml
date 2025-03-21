@@ -58,7 +58,7 @@ jobs:
         username: ${{ secrets.FTP_USER }}
         password: ${{ secrets.FTP_PASSWORD }}
         server-dir: /public_html/
-        local-dir: ./ # Especifica o diretório local (raiz do projeto) teste
+        local-dir: ./ # Especifica o diretório local (raiz do projeto) teste 2
         exclude: ""
 
     - name: 🚀 Executar comandos no servidor via SSH teste 2
