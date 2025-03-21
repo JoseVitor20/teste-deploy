@@ -72,7 +72,7 @@ jobs:
           **/bootstrap/cache/*.json
           **/bootstrap/cache/*.config.php
 
-    - name: 🚀 Executar comandos no servidor via SSH
+    - name: 🚀 Executar comandos no servidor via SSH teste
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
