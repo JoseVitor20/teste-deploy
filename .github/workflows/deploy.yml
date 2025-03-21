@@ -16,34 +16,17 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.2'
-        extensions: mbstring, ctype, fileinfo, openssl, PDO, mysql, pgsql, sqlite, tokenizer, xml
+        extensions: mbstring, ctype, fileinfo, openssl, pdo, mysql, tokenizer, xml
         tools: composer:v2
 
-    - name: Install dependencies
-      run: |
-        composer install --no-dev --prefer-dist --optimize-autoloader
+    - name: Install Composer dependencies
+      run: composer install --no-dev --prefer-dist --optimize-autoloader
 
-    # Opcional: Se usa npm (para assets)
     - name: Install Node dependencies
-      run: |
-        npm ci
-      working-directory: /path/to/your/assets # se aplicável
+      run: npm ci
 
     - name: Build assets
-      run: |
-        npm run prod
-      working-directory: /path/to/your/assets # se aplicável
-
-    - name: Setup environment
-      run: |
-        cp .env.example .env
-        php artisan key:generate
-      env:
-        APP_ENV: production
-        # Adicione outras variáveis de ambiente necessárias aqui
-
-    - name: Run migrations
-      run: php artisan migrate --force
+      run: npm run prod
 
     - name: Deploy to server
       uses: appleboy/ssh-action@v1
@@ -52,14 +35,9 @@ jobs:
         username: startt33@starttofinish.com.br
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          cd /path/to/your/project/on/server
+          cd /var/www/your-project
           git pull origin main
           composer install --no-dev --prefer-dist --optimize-autoloader
-          php artisan migrate --force
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
-          # Se usar Horizon/Queues:
-          php artisan horizon:terminate
-          # Se usar Octane:
-          php artisan octane:reload
+          npm ci
+          npm run prod
+          php artisan optimize
