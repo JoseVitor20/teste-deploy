@@ -59,7 +59,7 @@ jobs:
         ssh-keyscan -H ${{ secrets.SERVER }} >> ~/.ssh/known_hosts
         ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} "mkdir -p ${{ secrets.HOSTGATOR_DEPLOY_DIR }}"
 
-    - name: 📂 Enviar arquivos via FTP
+    - name: 📂 Enviar arquivos via FTP (testar exclusões)
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
         server: ${{ secrets.FTP_SERVER }}
@@ -68,10 +68,10 @@ jobs:
         server-dir: /public_html/
         local-dir: ./
         exclude: |
-          **/.git*
-          **/.env*
-          **/node_modules/*
-          **/vendor/*
+          **/.git*  # Testar removendo esta linha
+          **/.env*  # Testar removendo esta linha
+          **/node_modules/*  # Testar removendo esta linha
+          **/vendor/*  # Testar removendo esta linha
           **/tests/*
           **/storage/logs/*
           **/storage/framework/cache/*
@@ -88,12 +88,6 @@ jobs:
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -H ${{ secrets.SERVER }} >> ~/.ssh/known_hosts
-
-        # Verificar se a conexão SSH funciona
-        if ! ssh -o ConnectTimeout=10 -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} "echo 'Conexão SSH bem-sucedida!'"; then
-          echo "❌ Falha na conexão SSH. Verifique o endereço do servidor, usuário e chave SSH."
-          exit 1
-        fi
 
         ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} << 'EOF'
           cd ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
@@ -114,11 +108,4 @@ jobs:
           php artisan optimize
 
           echo "🛠️ Aplicando permissões..."
-          chmod -R 775 storage bootstrap/cache public/storage
-          chown -R www-data:www-data storage bootstrap/cache public/storage
-
-          echo "🗄️ Migrando banco de dados..."
-          php artisan migrate --force
-
-          echo "✅ Deploy concluído!"
-        EOF
+          chmod -R 
