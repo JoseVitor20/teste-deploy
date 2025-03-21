@@ -59,18 +59,7 @@ jobs:
         password: ${{ secrets.FTP_PASSWORD }}
         server-dir: /home2/startt33/public_html/
         local-dir: ./ # Especifica o diretório local (raiz do projeto)
-        exclude: |
-          **/.git*
-          **/.env*
-          **/node_modules/*
-          **/tests/*
-          **/database/*
-          **/storage/*
-          **/vendor/*
-          vendor/**
-          **/bootstrap/cache/*.php
-          **/bootstrap/cache/*.json
-          **/bootstrap/cache/*.config.php
+        exclude: ""
 
     - name: 🚀 Executar comandos no servidor via SSH teste 2
       run: |
