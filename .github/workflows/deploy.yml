@@ -21,7 +21,7 @@ jobs:
       run: cp .env.example .env && php artisan key:generate
 
     - name: 🧪 Rodar testes
-      run: php artisan test
+      run: vendor/bin/phpunit
 
   deploy:
     name: Deploy Laravel via FTP
