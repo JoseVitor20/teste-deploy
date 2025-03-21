@@ -33,10 +33,10 @@ jobs:
     - name: 📂 Enviar arquivos via FTP (excluindo `vendor/`)
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USER }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+        server: ${{secrets.FTP_SERVER}}
+        username: ${{secrets.FTP_USER}}
+        password: ${{secrets.FTP_PASSWORD}}
+        server-dir: ${{secrets.HOSTGATOR_DEPLOY_DIR}}
         local-dir: ./
         exclude: |
           **/.git*
@@ -56,12 +56,12 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+        ssh-keyscan -H ${{secrets.SERVER}} >> ~/.ssh/known_hosts
 
     - name: 🚀 Executar comandos no servidor via SSH
       run: |
-        ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-          cd ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+        ssh -i ~/.ssh/id_rsa ${{secrets.SSH_USER}} << 'EOF'
+          cd public_html/
 
           echo "🔑 Criando arquivo .env..."
           echo "${{ secrets.ENV_FILE }}" > .env
