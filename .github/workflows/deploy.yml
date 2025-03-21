@@ -1,43 +1,105 @@
-name: Deploy Laravel App
+name: Deploy Laravel para public_html via FTP
 
 on:
   push:
-    branches: [ main ]
+    branches:
+    - main
 
 jobs:
-  deploy:
+  test:
+    name: Executar Testes
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - name: 📥 Obter código mais recente
+      uses: actions/checkout@v3
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
-        extensions: mbstring, ctype, fileinfo, openssl, pdo, mysql, tokenizer, xml
-        tools: composer:v2
+    - name: 📦 Instalar dependências do Composer
+      run: composer install --no-dev --prefer-dist --no-interaction
 
-    - name: Install Composer dependencies
-      run: composer install --no-dev --prefer-dist --optimize-autoloader
+    - name: 🛠️ Configurar ambiente de teste
+      run: cp .env.example .env && php artisan key:generate
 
-    - name: Install Node dependencies
-      run: npm ci
+    - name: 🧪 Rodar testes
+      run: php artisan test
 
-    - name: Build assets
-      run: npm run prod
+  deploy:
+    name: Deploy Laravel via FTP
+    runs-on: ubuntu-latest
+    needs: test # Somente roda se os testes passarem
 
-    - name: Deploy to server
-      uses: appleboy/ssh-action@v1
-      with:
-        host: ssh.starttofinish.com.br
-        username: startt33@starttofinish.com.br
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          cd /var/www/your-project
-          git pull origin main
-          composer install --no-dev --prefer-dist --optimize-autoloader
-          npm ci
+    steps:
+    - name: 📥 Obter código mais recente
+      uses: actions/checkout@v3
+
+    - name: 🧹 Limpar cache do runner
+      run: rm -rf ~/.npm ~/.cache ~/.ssh
+
+    - name: 📦 Instalar dependências do NPM
+      run: npm install
+
+    - name: 🔨 Compilar assets do frontend (Vite ou Laravel Mix)
+      run: |
+        if [ -f "vite.config.js" ]; then
+          npm run build
+        elif [ -f "webpack.mix.js" ]; then
           npm run prod
+        else
+          echo "Nenhuma configuração de build detectada. Pulando esta etapa."
+        fi
+
+    - name: 📂 Enviar arquivos via FTP (excluindo `vendor/`)
+      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USER }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+        local-dir: ./
+        exclude: |
+          **/.git*
+          **/.env*
+          **/node_modules/*
+          **/tests/*
+          **/database/*
+          **/storage/*
+          **/vendor/*
+          vendor/**
+          **/bootstrap/cache/*.php
+          **/bootstrap/cache/*.json
+          **/bootstrap/cache/*.config.php
+
+    - name: 🚀 Executar comandos no servidor via SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+        ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          cd ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+
+          echo "🔑 Criando arquivo .env..."
+          echo "${{ secrets.ENV_FILE }}" > .env
+
+          echo "📦 Instalando dependências..."
+          composer install --no-dev --optimize-autoloader
+
+          echo "🔄 Configurando ambiente..."
+          mkdir -p storage bootstrap/cache
+          php artisan storage:link
+          php artisan config:clear
+          php artisan cache:clear
+          php artisan route:clear
+          php artisan view:clear
           php artisan optimize
+
+          echo "🛠️ Aplicando permissões..."
+          chmod -R 775 storage bootstrap/cache public/storage
+          chown -R www-data:www-data storage bootstrap/cache public/storage
+
+          echo "🗄️ Migrando banco de dados..."
+          php artisan migrate --force
+
+          echo "✅ Deploy concluído!"
+        EOF
