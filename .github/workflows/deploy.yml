@@ -54,11 +54,11 @@ jobs:
     - name: 📂 Enviar arquivos via FTP (excluindo `vendor/`)
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
-        server: ftp.starttofinish.com.br
-        username: Jose_testes@starttofinish.com.br
-        password: 29_Zezao_DevFull
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USER }}
+        password: ${{ secrets.FTP_PASSWORD }}
         server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
-        local-dir: ./
+        local-dir: ./ # Especifica o diretório local (raiz do projeto)
         exclude: |
           **/.git*
           **/.env*
@@ -79,7 +79,7 @@ jobs:
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -H ${{ secrets.SERVER }} >> ~/.ssh/known_hosts
 
-        ssh -i ~/.ssh/id_rsa SSH_USER << 'EOF'
+        ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} << 'EOF'
           cd ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
 
           echo "🔑 Criando arquivo .env..."
