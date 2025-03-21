@@ -1,89 +1,65 @@
-name: Deploy Laravel para public_html via FTP
+name: Deploy Laravel App
 
 on:
   push:
-    branches:
-    - main
+    branches: [ main ]
 
 jobs:
   deploy:
-    name: Deploy Laravel via FTP
     runs-on: ubuntu-latest
 
     steps:
-    - name: 📥 Obter código mais recente
-      uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-    - name: 🧹 Limpar cache do runner
-      run: rm -rf ~/.npm ~/.cache ~/.ssh
-
-    - name: 📦 Instalar dependências do NPM
-      run: npm install
-
-    - name: 🔨 Compilar assets do frontend (Vite ou Laravel Mix)
-      run: |
-        if [ -f "vite.config.js" ]; then
-          npm run build
-        elif [ -f "webpack.mix.js" ]; then
-          npm run prod
-        else
-          echo "Nenhuma configuração de build detectada. Pulando esta etapa."
-        fi
-
-    - name: 📂 Enviar arquivos via FTP (excluindo `vendor/`)
-      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
       with:
-        server: ftp.starttofinish.com.br
-        username: Jose_testes@starttofinish.com.br
-        password: 29_Zezao_DevFull
-        server-dir: public_html/
-        local-dir: ./
-        exclude: |
-          **/.git*
-          **/.env*
-          **/node_modules/*
-          **/tests/*
-          **/database/*
-          **/storage/*
-          **/vendor/*
-          vendor/**
-          **/bootstrap/cache/*.php
-          **/bootstrap/cache/*.json
-          **/bootstrap/cache/*.config.php
+        php-version: '8.2'
+        extensions: mbstring, ctype, fileinfo, openssl, PDO, mysql, pgsql, sqlite, tokenizer, xml
+        tools: composer:v2
 
-    - name: 🔑 Configurar chave SSH teste 1
+    - name: Install dependencies
       run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{secrets.SERVER}} >> ~/.ssh/known_hosts
+        composer install --no-dev --prefer-dist --optimize-autoloader
 
-    - name: 🚀 Executar comandos no servidor via SSH
+    # Opcional: Se usa npm (para assets)
+    - name: Install Node dependencies
       run: |
-        ssh -i ~/.ssh/id_rsa ${{secrets.SSH_USER}} << 'EOF'
-          cd public_html/
+        npm ci
+      working-directory: /path/to/your/assets # se aplicável
 
-          echo "🔑 Criando arquivo .env..."
-          echo "${{ secrets.ENV_FILE }}" > .env
+    - name: Build assets
+      run: |
+        npm run prod
+      working-directory: /path/to/your/assets # se aplicável
 
-          echo "📦 Instalando dependências..."
-          composer install --no-dev --optimize-autoloader
+    - name: Setup environment
+      run: |
+        cp .env.example .env
+        php artisan key:generate
+      env:
+        APP_ENV: production
+        # Adicione outras variáveis de ambiente necessárias aqui
 
-          echo "🔄 Configurando ambiente..."
-          mkdir -p storage bootstrap/cache
-          php artisan storage:link
-          php artisan config:clear
-          php artisan cache:clear
-          php artisan route:clear
-          php artisan view:clear
-          php artisan optimize
+    - name: Run migrations
+      run: php artisan migrate --force
 
-          echo "🛠️ Aplicando permissões..."
-          chmod -R 775 storage bootstrap/cache public/storage
-          chown -R www-data:www-data storage bootstrap/cache public/storage
-
-          echo "🗄️ Migrando banco de dados..."
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v1
+      with:
+        host: ssh.starttofinish.com.br
+        username: startt33@starttofinish.com.br
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /path/to/your/project/on/server
+          git pull origin main
+          composer install --no-dev --prefer-dist --optimize-autoloader
           php artisan migrate --force
-
-          echo "✅ Deploy concluído! 1"
-        EOF
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          # Se usar Horizon/Queues:
+          php artisan horizon:terminate
+          # Se usar Octane:
+          php artisan octane:reload
