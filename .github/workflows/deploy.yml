@@ -33,10 +33,10 @@ jobs:
     - name: 📂 Enviar arquivos via FTP (excluindo `vendor/`)
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
-        server: ${{secrets.FTP_SERVER}}
-        username: ${{secrets.FTP_USER}}
-        password: ${{secrets.FTP_PASSWORD}}
-        server-dir: ${{secrets.HOSTGATOR_DEPLOY_DIR}}
+        server: ftp.starttofinish.com.br
+        username: Jose_testes@starttofinish.com.br
+        password: 29_Zezao_DevFull
+        server-dir: public_html/
         local-dir: ./
         exclude: |
           **/.git*
