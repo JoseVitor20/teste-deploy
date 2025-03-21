@@ -48,7 +48,7 @@ jobs:
         elif [ -f "webpack.mix.js" ]; then
           npm run prod
         else
-          echo "Nenhuma configuração de build detectada. Pulando esta etapa."
+          echo "Nenhuma configuração de build detectada. Pulando esta etapa." teste 1
         fi
 
     - name: Criar diretório de destino no servidor (se necessário)
@@ -68,19 +68,19 @@ jobs:
         server-dir: /public_html/
         local-dir: ./
         exclude: |
-          **/.git*
-          **/.env*
-          **/node_modules/*
-          **/vendor/*
-          **/tests/*
-          **/storage/logs/*
-          **/storage/framework/cache/*
-          **/storage/framework/sessions/*
-          **/storage/framework/views/*
-          **/bootstrap/cache/*.php
-          **/bootstrap/cache/*.json
-          **/bootstrap/cache/*.config.php
-          **/public/hot
+          # **/.git*
+          # **/.env*
+          # **/node_modules/*
+          # **/vendor/*
+          # **/tests/*
+          # **/storage/logs/*
+          # **/storage/framework/cache/*
+          # **/storage/framework/sessions/*
+          # **/storage/framework/views/*
+          # **/bootstrap/cache/*.php
+          # **/bootstrap/cache/*.json
+          # **/bootstrap/cache/*.config.php
+          # **/public/hot
 
     - name: 🚀 Executar comandos no servidor via SSH
       run: |
