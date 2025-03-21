@@ -51,17 +51,36 @@ jobs:
           echo "Nenhuma configuração de build detectada. Pulando esta etapa."
         fi
 
-    - name: 📂 Enviar arquivos via FTP (excluindo `vendor/`)
+    - name: 📂 Enviar arquivos via FTP
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USER }}
         password: ${{ secrets.FTP_PASSWORD }}
         server-dir: /public_html/
-        local-dir: ./ # Especifica o diretório local (raiz do projeto) teste 2
-        exclude: ""
+        local-dir: ./
+        exclude: |
+          **/.git*
+          **/.env*
+          **/node_modules/*
+          **/tests/*
+          **/database/*
+          **/storage/*
+          **/vendor/*
+          vendor/**
+          **/bootstrap/cache/*.php
+          **/bootstrap/cache/*.json
+          **/bootstrap/cache/*.config.php
+          **/public/css/*
+          **/public/js/*
+          **/public/hot
+          **/public/storage
+          **/storage/logs/*
+          **/storage/framework/cache/*
+          **/storage/framework/sessions/*
+          **/storage/framework/views/*
 
-    - name: 🚀 Executar comandos no servidor via SSH teste 2
+    - name: 🚀 Executar comandos no servidor via SSH
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
