@@ -51,15 +51,27 @@ jobs:
           echo "Nenhuma configuração de build detectada. Pulando esta etapa."
         fi
 
-    - name: 📂 Enviar arquivos via FTP
+    - name: Criar diretório de destino no servidor (se necessário)
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.SERVER }} >> ~/.ssh/known_hosts
+        ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} "mkdir -p ${{ secrets.HOSTGATOR_DEPLOY_DIR }}"
+
+    - name: 📂 Enviar arquivos via FTP (testar exclusões)
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USER }}
         password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+        server-dir: /public_html/
         local-dir: ./
-        exclude: ""
+        exclude: |
+          **/.git*  # Testar removendo esta linha
+          **/.env*  # Testar removendo esta linha
+          **/node_modules/*  # Testar removendo esta linha
+          **/vendor/*  # Testar removendo esta linha
 
     - name: 🚀 Executar comandos no servidor via SSH
       run: |
@@ -87,11 +99,4 @@ jobs:
           php artisan optimize
 
           echo "🛠️ Aplicando permissões..."
-          chmod -R 775 storage bootstrap/cache public/storage
-          chown -R www-data:www-data storage bootstrap/cache public/storage
-
-          echo "🗄️ Migrando banco de dados..."
-          php artisan migrate --force
-
-          echo "✅ Deploy concluído!"
-        EOF
+          chmod -R 
