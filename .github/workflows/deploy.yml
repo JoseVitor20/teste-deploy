@@ -57,7 +57,7 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USER }}
         password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: /home2/startt33/public_html
+        server-dir: /home2/startt33/public_html/
         local-dir: ./ # Especifica o diretório local (raiz do projeto)
         exclude: |
           **/.git*
