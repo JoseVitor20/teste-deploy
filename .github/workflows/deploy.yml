@@ -63,7 +63,6 @@ jobs:
           **/.git*
           **/.env*
           **/node_modules/*
-          **/vendor/*
 
     - name: 🚀 Executar comandos no servidor via SSH
       run: |
