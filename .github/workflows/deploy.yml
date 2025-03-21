@@ -51,7 +51,7 @@ jobs:
           **/bootstrap/cache/*.json
           **/bootstrap/cache/*.config.php
 
-    - name: 🔑 Configurar chave SSH
+    - name: 🔑 Configurar chave SSH teste 1
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
