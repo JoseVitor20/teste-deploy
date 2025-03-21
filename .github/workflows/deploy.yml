@@ -72,15 +72,6 @@ jobs:
           **/.env*  # Testar removendo esta linha
           **/node_modules/*  # Testar removendo esta linha
           **/vendor/*  # Testar removendo esta linha
-          **/tests/*
-          **/storage/logs/*
-          **/storage/framework/cache/*
-          **/storage/framework/sessions/*
-          **/storage/framework/views/*
-          **/bootstrap/cache/*.php
-          **/bootstrap/cache/*.json
-          **/bootstrap/cache/*.config.php
-          **/public/hot
 
     - name: 🚀 Executar comandos no servidor via SSH
       run: |
