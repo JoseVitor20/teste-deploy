@@ -5,7 +5,7 @@ on:
     - main
 jobs:
   test:
-    name: Executar Testes
+    name: Executar Testes de back-end
     runs-on: ubuntu-latest
     steps:
     - name: 📥 Obter código mais recente
