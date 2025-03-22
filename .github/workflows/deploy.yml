@@ -53,6 +53,13 @@ jobs:
         node-version: 18 # Use a versão estável mais recente
         cache: 'npm'
 
+    - name: 🌀 Verificar package-lock.json
+      run: |
+        if [ ! -f "package-lock.json" ]; then
+          echo "::error::Arquivo package-lock.json não encontrado. Gere-o com 'npm install' e commit-o no repositório."
+          exit 1
+        fi
+
     - name: 🌀 Cache do npm
       uses: actions/cache@v3
       with:
