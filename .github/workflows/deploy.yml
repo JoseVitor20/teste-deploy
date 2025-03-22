@@ -57,7 +57,7 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USER }}
         password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+        server-dir: /hom2/startt33/public_html/
         local-dir: ./
         exclude: |
           **/.git*  # Testar removendo esta linha
@@ -73,7 +73,7 @@ jobs:
         ssh-keyscan -H ${{ secrets.SERVER }} >> ~/.ssh/known_hosts
 
         ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} << 'EOF'
-        cd ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+        cd /hom2/startt33/public_html/
 
         echo "🔑 Criando arquivo .env..."
         echo "${{ secrets.ENV_FILE }}" > .env
