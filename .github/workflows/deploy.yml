@@ -38,7 +38,7 @@ jobs:
 
     steps:
     - name: 📥 Obter código mais recente
-      uses: actions/checkout@v3 # 🔄 Adicionado para evitar erro do npm
+      uses: actions/checkout@v3
 
     - name: Cache do NPM
       uses: actions/cache@v3
@@ -69,7 +69,7 @@ jobs:
           npm run prod
         fi
 
-    - name: 📂 Enviar arquivos via FTP (Somente alterações)
+    - name: 📂 Enviar arquivos via FTP
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
         server: ${{ secrets.FTP_SERVER }}
@@ -82,7 +82,6 @@ jobs:
           **/.env*
           **/node_modules/*
           **/vendor/*
-        only-newer: true
 
     - name: Executar pós-deploy no servidor
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
@@ -91,4 +90,7 @@ jobs:
         username: ${{ secrets.FTP_USER }}
         password: ${{ secrets.FTP_PASSWORD }}
         server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
-        local-dir: ./deploy.sh
+        local-dir: ./
+        exclude: |
+          **/*  # Exclui tudo
+          !deploy.sh  # Apenas envia deploy.sh
