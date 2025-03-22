@@ -47,31 +47,32 @@ jobs:
         path: vendor
         key: composer-${{ hashFiles('composer.lock') }}
 
+    # Verifica se o projeto usa Node.js
+    - name: 🌀 Verificar se o projeto usa Node.js
+      id: check-node
+      run: |
+        if [ -f "package.json" ]; then
+          echo "::set-output name=uses_node::true"
+        else
+          echo "::set-output name=uses_node::false"
+        fi
+
+    # Configura o Node.js apenas se o projeto usa npm
     - name: 🔄 Configurar Node.js
+      if: steps.check-node.outputs.uses_node == 'true'
       uses: actions/setup-node@v3
       with:
         node-version: 18 # Use a versão estável mais recente
         cache: 'npm'
 
-    - name: 🌀 Verificar package-lock.json
-      run: |
-        if [ ! -f "package-lock.json" ]; then
-          echo "::error::Arquivo package-lock.json não encontrado. Gere-o com 'npm install' e commit-o no repositório."
-          exit 1
-        fi
-
-    - name: 🌀 Cache do npm
-      uses: actions/cache@v3
-      with:
-        path: |
-          node_modules
-          ~/.npm
-        key: npm-${{ hashFiles('package-lock.json') }}
-
+    # Instala dependências do npm apenas se o projeto usa npm
     - name: 📦 Instalar dependências do NPM (CI)
+      if: steps.check-node.outputs.uses_node == 'true'
       run: npm ci --prefer-offline
 
+    # Compila assets apenas se o projeto usa npm
     - name: 🔨 Compilar assets (Otimizado)
+      if: steps.check-node.outputs.uses_node == 'true'
       run: |
         if [ -f "vite.config.js" ] || [ -f "webpack.mix.js" ]; then
           npm run prod
