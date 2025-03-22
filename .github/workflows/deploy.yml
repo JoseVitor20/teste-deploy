@@ -27,16 +27,11 @@ jobs:
 
     - name: 🛠️ Configurar ambiente
       run: |
-        # Cria .env a partir do exemplo ou testing
         [ -f ".env.testing" ] && cp .env.testing .env || cp .env.example .env
-
-        # Configurações específicas para CI
         echo "APP_ENV=testing" >> .env
         echo "APP_DEBUG=true" >> .env
         echo "DB_CONNECTION=sqlite" >> .env
         echo "DB_DATABASE=:memory:" >> .env
-
-        # Gera chave de aplicação
         php artisan key:generate
 
     - name: 🧪 Rodar testes
@@ -71,8 +66,13 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
 
-    - name: 📦 Instalar NPM (CI)
-      run: npm ci
+    - name: 📦 Instalar dependências do NPM
+      run: |
+        if [ -f "package-lock.json" ]; then
+          npm ci
+        else
+          npm install
+        fi
 
     - name: 🔨 Compilar assets
       run: npm run build
