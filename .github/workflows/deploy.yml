@@ -51,7 +51,7 @@ jobs:
     - name: 📦 Instalar dependências do NPM
       run: npm install
 
-    - name: Verificar mudanças no frontend
+    - name: Verificar mudanças no frontend teste 1
       id: check-frontend
       run: |
         if git diff --name-only HEAD~1 | grep -E 'resources/|vite.config.js|webpack.mix.js|package.json|yarn.lock|package-lock.json'; then
