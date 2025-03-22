@@ -92,7 +92,7 @@ jobs:
         find . -type f -name "*.example" -delete
         find . -type f -name "*.sample" -delete
 
-    - name: 📤 Upload FTP inteligente
+    - name: 📤 Upload FTP inteligente teste 1
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
         server: ${{ secrets.FTP_SERVER }}
