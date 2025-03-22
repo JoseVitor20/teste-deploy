@@ -60,7 +60,7 @@ jobs:
           echo "build_needed=false" >> $GITHUB_ENV
         fi
 
-    - name: 🔨 Compilar assets do frontend (Vite ou Laravel Mix)
+    - name: 🔨 Compilar assets do frontend (Vite ou Laravel Mix) teste 1
       if: env.build_needed == 'true'
       run: |
         if [ -f "vite.config.js" ]; then
