@@ -48,7 +48,7 @@ jobs:
         elif [ -f "webpack.mix.js" ]; then
           npm run prod
         else
-          echo "Nenhuma configuração de build detectada. Pulando esta etapa." teste 1
+          echo "Nenhuma configuração de build detectada. Pulando esta etapa." teste 2
         fi
 
     - name: Criar diretório de destino no servidor (se necessário)
