@@ -1,4 +1,4 @@
-name: Deploy Laravel para public_html via FTP (Otimizado)
+name: Deploy Laravel para public_html via FTP (Otimizado e Corrigido)
 
 on:
   push:
@@ -22,13 +22,17 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-composer-
 
-    - name: 📦 Instalar dependências
-      run: composer install --prefer-dist --no-interaction --no-scripts
-
     - name: 🛠️ Configurar ambiente
       run: |
-        cp .env.testing .env
+        [ -f ".env.testing" ] && cp .env.testing .env || cp .env.example .env
+        echo "APP_ENV=testing" >> .env
+        echo "APP_DEBUG=true" >> .env
+        echo "DB_CONNECTION=sqlite" >> .env
+        echo "DB_DATABASE=:memory:" >> .env
         php artisan key:generate
+
+    - name: 📦 Instalar dependências
+      run: composer install --prefer-dist --no-interaction --no-scripts
 
     - name: 🧪 Rodar testes
       run: ./vendor/bin/phpunit
