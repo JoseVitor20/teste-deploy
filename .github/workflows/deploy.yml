@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - main
+    - staging # Adicione outras branches conforme necessário
 
 jobs:
   test:
@@ -51,7 +52,7 @@ jobs:
     - name: 📦 Instalar dependências do NPM
       run: npm install
 
-    - name: Verificar mudanças no frontend teste 1
+    - name: Verificar mudanças no frontend
       id: check-frontend
       run: |
         if git diff --name-only HEAD~1 | grep -E 'resources/|vite.config.js|webpack.mix.js|package.json|yarn.lock|package-lock.json'; then
@@ -60,7 +61,7 @@ jobs:
           echo "build_needed=false" >> $GITHUB_ENV
         fi
 
-    - name: 🔨 Compilar assets do frontend (Vite ou Laravel Mix) teste 1
+    - name: 🔨 Compilar assets do frontend (Vite ou Laravel Mix)
       if: env.build_needed == 'true'
       run: |
         if [ -f "vite.config.js" ]; then
@@ -75,7 +76,7 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USER }}
         password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+        server-dir: ${{ github.ref == 'refs/heads/main' && secrets.HOSTGATOR_PROD_DIR || secrets.HOSTGATOR_STAGING_DIR }}
         local-dir: ./
         exclude: |
           **/.git*
@@ -89,7 +90,7 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USER }}
         password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+        server-dir: ${{ github.ref == 'refs/heads/main' && secrets.HOSTGATOR_PROD_DIR || secrets.HOSTGATOR_STAGING_DIR }}
         local-dir: ./
         exclude: |
           **/*  # Exclui tudo
