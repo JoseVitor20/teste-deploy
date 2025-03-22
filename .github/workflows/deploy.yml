@@ -59,6 +59,16 @@ jobs:
           echo "uses_node=false" >> "$GITHUB_ENV"
         fi
 
+    # Verifica se há necessidade de compilar assets (Vite/Webpack)
+    - name: 🔍 Verificar se o projeto precisa de build de assets
+      if: env.uses_node == 'true'
+      run: |
+        if [[ -f "vite.config.js" || -f "webpack.mix.js" ]]; then
+          echo "build_assets=true" >> "$GITHUB_ENV"
+        else
+          echo "build_assets=false" >> "$GITHUB_ENV"
+        fi
+
     # Configura o Node.js apenas se o projeto usar npm
     - name: 🔄 Configurar Node.js
       if: env.uses_node == 'true'
@@ -77,9 +87,9 @@ jobs:
           npm install --prefer-offline
         fi
 
-    # Compila assets apenas se o projeto usa npm e tiver Vite/Webpack
+    # Compila assets apenas se o projeto precisar de build de assets
     - name: 🔨 Compilar assets (Otimizado)
-      if: env.uses_node == 'true' && ( [ -f "vite.config.js" ] || [ -f "webpack.mix.js" ] )
+      if: env.uses_node == 'true' && env.build_assets == 'true'
       run: npm run prod
 
     - name: 📂 Enviar arquivos via FTP (Otimizado)
