@@ -4,7 +4,6 @@ on:
   push:
     branches:
     - main
-    - staging # Adicione outras branches conforme necessário
 
 jobs:
   test:
@@ -15,59 +14,38 @@ jobs:
     - name: 📥 Obter código mais recente
       uses: actions/checkout@v3
 
-    - name: Cache do Composer
-      uses: actions/cache@v3
-      with:
-        path: vendor
-        key: composer-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          composer-
-
     - name: 📦 Instalar dependências do Composer
-      run: composer install --prefer-dist --no-interaction --no-scripts
+      run: composer install --prefer-dist --no-interaction --no-scripts --no-progress
 
     - name: 🛠️ Configurar ambiente de teste
       run: cp .env.example .env && php artisan key:generate
 
-    - name: 🧪 Rodar testes
+    - name: � Rodar testes
       run: ./vendor/bin/phpunit
 
   deploy:
     name: Deploy Laravel via FTP
     runs-on: ubuntu-latest
-    needs: test
+    needs: test # Somente roda se os testes passarem
 
     steps:
     - name: 📥 Obter código mais recente
       uses: actions/checkout@v3
 
-    - name: Cache do NPM
-      uses: actions/cache@v3
-      with:
-        path: node_modules
-        key: npm-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          npm-
+    - name: 🧹 Limpar cache do runner
+      run: rm -rf ~/.npm ~/.cache ~/.ssh
 
     - name: 📦 Instalar dependências do NPM
-      run: npm install
-
-    - name: Verificar mudanças no frontend
-      id: check-frontend
-      run: |
-        if git diff --name-only HEAD~1 | grep -E 'resources/|vite.config.js|webpack.mix.js|package.json|yarn.lock|package-lock.json'; then
-          echo "build_needed=true" >> $GITHUB_ENV
-        else
-          echo "build_needed=false" >> $GITHUB_ENV
-        fi
+      run: npm install --prefer-offline --no-audit
 
     - name: 🔨 Compilar assets do frontend (Vite ou Laravel Mix)
-      if: env.build_needed == 'true'
       run: |
         if [ -f "vite.config.js" ]; then
           npm run build
         elif [ -f "webpack.mix.js" ]; then
           npm run prod
+        else
+          echo "Nenhuma configuração de build detectada. Pulando esta etapa."
         fi
 
     - name: 📂 Enviar arquivos via FTP
@@ -76,7 +54,7 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USER }}
         password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: /home2/startt33/public_html/
+        server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
         local-dir: ./
         exclude: |
           **/.git*
@@ -84,14 +62,37 @@ jobs:
           **/node_modules/*
           **/vendor/*
 
-    - name: Executar pós-deploy no servidor
-      uses: SamKirkland/FTP-Deploy-Action@4.3.0
-      with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USER }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: /home2/startt33/public_html/
-        local-dir: ./
-        exclude: |
-          **/*  # Exclui tudo
-          !deploy.sh  # Apenas envia deploy.sh
+    - name: 🚀 Executar comandos no servidor via SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.SERVER }} >> ~/.ssh/known_hosts
+
+        ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} << 'EOF'
+        cd ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+
+        echo "🔑 Criando arquivo .env..."
+        echo "${{ secrets.ENV_FILE }}" > .env
+
+        echo "📦 Instalando dependências..."
+        composer install --no-dev --optimize-autoloader --no-progress
+
+        echo "🔄 Configurando ambiente..."
+        mkdir -p storage bootstrap/cache
+        php artisan storage:link
+        php artisan config:clear
+        php artisan cache:clear
+        php artisan route:clear
+        php artisan view:clear
+        php artisan optimize
+
+        echo "🛠️ Aplicando permissões..."
+        chmod -R 775 storage bootstrap/cache public/storage
+        chown -R www-data:www-data storage bootstrap/cache public/storage
+
+        echo "🗄️ Migrando banco de dados..."
+        php artisan migrate --force
+
+        echo "✅ Deploy concluído!"
+        EOF
