@@ -15,12 +15,15 @@ jobs:
       uses: actions/checkout@v3
 
     - name: 📦 Instalar dependências do Composer
-      run: composer install --prefer-dist --no-interaction --no-scripts --no-progress
+      run: composer install --prefer-dist --no-interaction --no-scripts
 
     - name: 🛠️ Configurar ambiente de teste
       run: cp .env.example .env && php artisan key:generate
 
-    - name: � Rodar testes
+    - name: 📦 Instalar PHPUnit
+      run: composer require --dev phpunit/phpunit
+
+    - name: 🧪 Rodar testes
       run: ./vendor/bin/phpunit
 
   deploy:
@@ -36,7 +39,7 @@ jobs:
       run: rm -rf ~/.npm ~/.cache ~/.ssh
 
     - name: 📦 Instalar dependências do NPM
-      run: npm install --prefer-offline --no-audit
+      run: npm install
 
     - name: 🔨 Compilar assets do frontend (Vite ou Laravel Mix)
       run: |
@@ -57,10 +60,10 @@ jobs:
         server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
         local-dir: ./
         exclude: |
-          **/.git*
-          **/.env*
-          **/node_modules/*
-          **/vendor/*
+          **/.git*  # Testar removendo esta linha
+          **/.env*  # Testar removendo esta linha
+          **/node_modules/*  # Testar removendo esta linha
+          **/vendor/*  # Testar removendo esta linha
 
     - name: 🚀 Executar comandos no servidor via SSH
       run: |
@@ -76,7 +79,7 @@ jobs:
         echo "${{ secrets.ENV_FILE }}" > .env
 
         echo "📦 Instalando dependências..."
-        composer install --no-dev --optimize-autoloader --no-progress
+        composer install --no-dev --optimize-autoloader
 
         echo "🔄 Configurando ambiente..."
         mkdir -p storage bootstrap/cache
