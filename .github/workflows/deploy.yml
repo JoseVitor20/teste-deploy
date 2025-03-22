@@ -57,7 +57,7 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USER }}
         password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: /hom2/startt33/public_html/
+        server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
         local-dir: ./
         exclude: |
           **/.git*  # Testar removendo esta linha
@@ -65,7 +65,7 @@ jobs:
           **/node_modules/*  # Testar removendo esta linha
           **/vendor/*  # Testar removendo esta linha
 
-    - name: 🚀 Executar comandos no servidor via SSH
+    - name: 🚀 Executar comandos no servidor via SSH teste
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
@@ -73,7 +73,7 @@ jobs:
         ssh-keyscan -H ${{ secrets.SERVER }} >> ~/.ssh/known_hosts
 
         ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} << 'EOF'
-        cd /hom2/startt33/public_html/
+        cd ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
 
         echo "🔑 Criando arquivo .env..."
         echo "${{ secrets.ENV_FILE }}" > .env
