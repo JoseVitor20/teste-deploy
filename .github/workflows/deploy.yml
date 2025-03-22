@@ -76,7 +76,7 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USER }}
         password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+        server-dir: /home2/startt33/public_html/
         local-dir: ./
         exclude: |
           **/.git*
@@ -90,7 +90,7 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USER }}
         password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+        server-dir: /home2/startt33/public_html/
         local-dir: ./
         exclude: |
           **/*  # Exclui tudo
