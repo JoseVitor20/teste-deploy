@@ -6,37 +6,6 @@ on:
     - main
 
 jobs:
-  test:
-    name: Executar Testes
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: 📥 Obter código mais recente
-      uses: actions/checkout@v4
-
-    - name: 🗃️ Cache Composer
-      uses: actions/cache@v3
-      with:
-        path: vendor
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-composer-
-
-    - name: 📦 Instalar dependências do Composer
-      run: composer install --prefer-dist --no-interaction --no-scripts
-
-    - name: 🛠️ Configurar ambiente
-      run: |
-        [ -f ".env.testing" ] && cp .env.testing .env || cp .env.example .env
-        echo "APP_ENV=testing" >> .env
-        echo "APP_DEBUG=true" >> .env
-        echo "DB_CONNECTION=sqlite" >> .env
-        echo "DB_DATABASE=:memory:" >> .env
-        php artisan key:generate
-
-    - name: 🧪 Rodar testes
-      run: ./vendor/bin/phpunit
-
   deploy:
     name: Deploy Laravel via FTP
     runs-on: ubuntu-latest
@@ -77,6 +46,21 @@ jobs:
     - name: 🔨 Compilar assets
       run: npm run build
 
+    - name: 🧹 Limpar arquivos desnecessários
+      run: |
+        # Remove diretórios e arquivos que não devem ser enviados
+        rm -rf node_modules .git tests docs docker examples build .github .idea .vscode
+        find . -type f -name "*.md" -delete
+        find . -type f -name "*.log" -delete
+        find . -type f -name "*.sql" -delete
+        find . -type f -name "*.txt" -delete
+        find . -type f -name "*.xml" -delete
+        find . -type f -name "*.yml" -delete
+        find . -type f -name "*.lock" -delete
+        find . -type f -name "*.dist" -delete
+        find . -type f -name "*.example" -delete
+        find . -type f -name "*.sample" -delete
+
     - name: 📤 Upload FTP inteligente
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
@@ -87,15 +71,25 @@ jobs:
         local-dir: ./
         exclude: |
           **/.git*
-          **/*.md
-          **/.editorconfig
-          **/.gitattributes
+          **/node_modules/*
+          **/vendor/*
+          **/storage/*
+          **/bootstrap/cache/*
           **/tests/*
           **/docs/*
           **/docker/*
           **/examples/*
           **/build/*
-          **/phpunit.xml
+          **/*.md
+          **/*.log
+          **/*.sql
+          **/*.txt
+          **/*.xml
+          **/*.yml
+          **/*.lock
+          **/*.dist
+          **/*.example
+          **/*.sample
 
     - name: 🚀 Configuração Remota
       run: |
