@@ -12,7 +12,13 @@ jobs:
 
     steps:
     - name: 📥 Obter código mais recente
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
+
+    - name: 🐘 Cache do Composer
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: composer-${{ hashFiles('composer.lock') }}
 
     - name: 📦 Instalar dependências do Composer
       run: composer install --prefer-dist --no-interaction --no-scripts
@@ -20,38 +26,42 @@ jobs:
     - name: 🛠️ Configurar ambiente de teste
       run: cp .env.example .env && php artisan key:generate
 
-    - name: 📦 Instalar PHPUnit
-      run: composer require --dev phpunit/phpunit
-
     - name: 🧪 Rodar testes
       run: ./vendor/bin/phpunit
 
   deploy:
-    name: Deploy Laravel via FTP
+    name: Deploy Otimizado
     runs-on: ubuntu-latest
-    needs: test # Somente roda se os testes passarem
+    needs: test
 
     steps:
     - name: 📥 Obter código mais recente
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
-    - name: 🧹 Limpar cache do runner
-      run: rm -rf ~/.npm ~/.cache ~/.ssh
+    - name: 🐘 Cache do Composer
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: composer-${{ hashFiles('composer.lock') }}
 
-    - name: 📦 Instalar dependências do NPM
-      run: npm install
+    - name: 🌀 Cache do npm
+      uses: actions/cache@v3
+      with:
+        path: node_modules
+        key: npm-${{ hashFiles('package-lock.json') }}
 
-    - name: 🔨 Compilar assets do frontend (Vite ou Laravel Mix)
+    - name: 📦 Instalar dependências do NPM (CI)
+      run: npm ci --prefer-offline
+
+    - name: 🔨 Compilar assets (Otimizado)
       run: |
-        if [ -f "vite.config.js" ]; then
-          npm run build
-        elif [ -f "webpack.mix.js" ]; then
+        if [ -f "vite.config.js" ] || [ -f "webpack.mix.js" ]; then
           npm run prod
         else
           echo "Nenhuma configuração de build detectada. Pulando esta etapa."
         fi
 
-    - name: 📂 Enviar arquivos via FTP
+    - name: 📂 Enviar arquivos via FTP (Otimizado)
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
         server: ${{ secrets.FTP_SERVER }}
@@ -60,10 +70,16 @@ jobs:
         server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
         local-dir: ./
         exclude: |
-          **/.git*  # Testar removendo esta linha
-          **/.env*  # Testar removendo esta linha
+          **/.git*
+          **/.env*
+          **/tests/*
+          **/storage/logs/*
+          **/storage/framework/cache/*
+          **/storage/framework/sessions/*
+          **/storage/framework/views/*
+          **/bootstrap/cache/*.php
 
-    - name: 🚀 Executar comandos no servidor via SSH
+    - name: 🚀 Configuração Rápida no Servidor
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
@@ -73,27 +89,17 @@ jobs:
         ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} << 'EOF'
           cd ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
 
-          echo "🔑 Criando arquivo .env..."
-          echo "${{ secrets.ENV_FILE }}" > .env
+          # Otimização: Usar cache do Composer
+          composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-          echo "📦 Instalando dependências..."
-          composer install --no-dev --optimize-autoloader
-
-          echo "🔄 Configurando ambiente..."
-          mkdir -p storage bootstrap/cache
+          # Otimização: Configuração rápida
           php artisan storage:link
-          php artisan config:clear
-          php artisan cache:clear
-          php artisan route:clear
-          php artisan view:clear
-          php artisan optimize
+          php artisan optimize:clear
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
 
-          echo "🛠️ Aplicando permissões..."
-          chmod -R 775 storage bootstrap/cache public/storage
-          chown -R www-data:www-data storage bootstrap/cache public/storage
-
-          echo "🗄️ Migrando banco de dados..."
-          php artisan migrate --force
-
-          echo "✅ Deploy concluído!"
+          # Atualizar permissões apenas se necessário
+          [ ! -d storage ] && mkdir -p storage
+          chmod -R 775 storage bootstrap/cache
         EOF
