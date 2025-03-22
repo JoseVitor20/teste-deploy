@@ -59,7 +59,11 @@ jobs:
         password: ${{ secrets.FTP_PASSWORD }}
         server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
         local-dir: ./
-        exclude: ""
+        exclude: |
+          **/.git*  # Testar removendo esta linha
+          **/.env*  # Testar removendo esta linha
+          **/node_modules/*  # Testar removendo esta linha
+          **/vendor/*  # Testar removendo esta linha
 
     - name: 🚀 Executar comandos no servidor via SSH
       run: |
