@@ -52,39 +52,35 @@ jobs:
       id: check-node
       run: |
         if [ -f "package.json" ]; then
-          echo "::set-output name=uses_node::true"
+          echo "Node.js detectado! Instalando dependências..."
+          echo "uses_node=true" >> "$GITHUB_ENV"
         else
-          echo "::set-output name=uses_node::false"
+          echo "Node.js não detectado. Pulando etapas relacionadas."
+          echo "uses_node=false" >> "$GITHUB_ENV"
         fi
 
-    # Configura o Node.js apenas se o projeto usa npm
+    # Configura o Node.js apenas se o projeto usar npm
     - name: 🔄 Configurar Node.js
-      if: steps.check-node.outputs.uses_node == 'true'
+      if: env.uses_node == 'true'
       uses: actions/setup-node@v3
       with:
-        node-version: 18 # Use a versão estável mais recente
-        cache: ${{ steps.check-node.outputs.uses_node == 'true' && 'npm' || '' }}
+        node-version: 18
+        cache: npm
 
-    # Instala dependências do npm apenas se o projeto usa npm
+    # Instala dependências do npm apenas se o projeto usa Node.js
     - name: 📦 Instalar dependências do NPM (CI)
-      if: steps.check-node.outputs.uses_node == 'true'
+      if: env.uses_node == 'true'
       run: |
         if [ -f "package-lock.json" ]; then
           npm ci --prefer-offline
         else
-          echo "::error::Arquivo package-lock.json não encontrado. Gere-o com 'npm install' e commit-o no repositório."
-          exit 1
+          npm install --prefer-offline
         fi
 
-    # Compila assets apenas se o projeto usa npm
+    # Compila assets apenas se o projeto usa npm e tiver Vite/Webpack
     - name: 🔨 Compilar assets (Otimizado)
-      if: steps.check-node.outputs.uses_node == 'true'
-      run: |
-        if [ -f "vite.config.js" ] || [ -f "webpack.mix.js" ]; then
-          npm run prod
-        else
-          echo "Nenhuma configuração de build detectada. Pulando esta etapa."
-        fi
+      if: env.uses_node == 'true' && ( [ -f "vite.config.js" ] || [ -f "webpack.mix.js" ] )
+      run: npm run prod
 
     - name: 📂 Enviar arquivos via FTP (Otimizado)
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
