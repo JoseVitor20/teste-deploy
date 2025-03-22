@@ -63,12 +63,18 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: 18 # Use a versão estável mais recente
-        cache: 'npm'
+        cache: ${{ steps.check-node.outputs.uses_node == 'true' && 'npm' || '' }}
 
     # Instala dependências do npm apenas se o projeto usa npm
     - name: 📦 Instalar dependências do NPM (CI)
       if: steps.check-node.outputs.uses_node == 'true'
-      run: npm ci --prefer-offline
+      run: |
+        if [ -f "package-lock.json" ]; then
+          npm ci --prefer-offline
+        else
+          echo "::error::Arquivo package-lock.json não encontrado. Gere-o com 'npm install' e commit-o no repositório."
+          exit 1
+        fi
 
     # Compila assets apenas se o projeto usa npm
     - name: 🔨 Compilar assets (Otimizado)
