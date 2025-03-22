@@ -97,5 +97,5 @@ jobs:
         echo "🗄️ Migrando banco de dados..."
         php artisan migrate --force
 
-        echo "✅ Deploy concluído!"
+        echo "✅ Deploy efetuado com sucesso!"
         EOF
