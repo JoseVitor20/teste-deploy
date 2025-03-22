@@ -62,8 +62,6 @@ jobs:
         exclude: |
           **/.git*  # Testar removendo esta linha
           **/.env*  # Testar removendo esta linha
-          **/node_modules/*  # Testar removendo esta linha
-          **/vendor/*  # Testar removendo esta linha
 
     - name: 🚀 Executar comandos no servidor via SSH teste
       run: |
