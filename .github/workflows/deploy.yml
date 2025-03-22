@@ -62,8 +62,10 @@ jobs:
         exclude: |
           **/.git*  # Testar removendo esta linha
           **/.env*  # Testar removendo esta linha
+          **/node_modules/*  # Testar removendo esta linha
+          **/vendor/*  # Testar removendo esta linha
 
-    - name: 🚀 Executar comandos no servidor via SSH teste
+    - name: 🚀 Executar comandos no servidor via SSH
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
