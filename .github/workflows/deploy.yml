@@ -26,6 +26,9 @@ jobs:
     - name: 🛠️ Configurar ambiente de teste
       run: cp .env.example .env && php artisan key:generate
 
+    - name: 📦 Instalar PHPUnit
+      run: composer require --dev phpunit/phpunit
+
     - name: 🧪 Rodar testes
       run: ./vendor/bin/phpunit
 
@@ -44,10 +47,15 @@ jobs:
         path: vendor
         key: composer-${{ hashFiles('composer.lock') }}
 
+    - name: 🔄 Atualizar npm
+      run: npm install -g npm@latest
+
     - name: 🌀 Cache do npm
       uses: actions/cache@v3
       with:
-        path: node_modules
+        path: |
+          node_modules
+          ~/.npm
         key: npm-${{ hashFiles('package-lock.json') }}
 
     - name: 📦 Instalar dependências do NPM (CI)
