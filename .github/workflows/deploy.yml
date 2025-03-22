@@ -1,4 +1,4 @@
-name: Deploy Laravel para public_html via FTP
+name: Deploy Laravel para public_html via FTP (Otimizado)
 
 on:
   push:
@@ -12,16 +12,23 @@ jobs:
 
     steps:
     - name: 📥 Obter código mais recente
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
-    - name: 📦 Instalar dependências do Composer
+    - name: 🗃️ Cache Composer
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-composer-
+
+    - name: 📦 Instalar dependências
       run: composer install --prefer-dist --no-interaction --no-scripts
 
-    - name: 🛠️ Configurar ambiente de teste
-      run: cp .env.example .env && php artisan key:generate
-
-    - name: 📦 Instalar PHPUnit
-      run: composer require --dev phpunit/phpunit
+    - name: 🛠️ Configurar ambiente
+      run: |
+        cp .env.testing .env
+        php artisan key:generate
 
     - name: 🧪 Rodar testes
       run: ./vendor/bin/phpunit
@@ -29,30 +36,40 @@ jobs:
   deploy:
     name: Deploy Laravel via FTP
     runs-on: ubuntu-latest
-    needs: test # Somente roda se os testes passarem
+    needs: test
+    timeout-minutes: 10
 
     steps:
-    - name: 📥 Obter código mais recente
-      uses: actions/checkout@v3
+    - name: 📥 Obter código
+      uses: actions/checkout@v4
 
-    - name: 🧹 Limpar cache do runner
-      run: rm -rf ~/.npm ~/.cache ~/.ssh
+    - name: 🗃️ Cache Composer
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-composer-
 
-    - name: 📦 Instalar dependências do NPM
-      run: npm install
+    - name: 📦 Instalar dependências de produção
+      run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
 
-    - name: 🔨 Compilar assets do frontend (Vite ou Laravel Mix)
-      run: |
-        if [ -f "vite.config.js" ]; then
-          npm run build
-        elif [ -f "webpack.mix.js" ]; then
-          npm run prod
-        else
-          echo "Nenhuma configuração de build detectada. Pulando esta etapa."
-        fi
+    - name: 🗃️ Cache NPM
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
 
-    - name: 📂 Enviar arquivos via FTP
-      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+    - name: 📦 Instalar NPM (CI)
+      run: npm ci
+
+    - name: 🔨 Compilar assets
+      run: npm run build
+
+    - name: 📤 Upload FTP inteligente
+      uses: SamKirkland/FTP-Deploy-Action@4.3.4
       with:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USER }}
@@ -60,42 +77,38 @@ jobs:
         server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
         local-dir: ./
         exclude: |
-          **/.git*  # Testar removendo esta linha
-          **/.env*  # Testar removendo esta linha
-          **/node_modules/*  # Testar removendo esta linha
-          **/vendor/*  # Testar removendo esta linha
+          **/.git*
+          **/*.md
+          **/.editorconfig
+          **/.gitattributes
+          **/tests/*
+          **/docs/*
+          **/docker/*
+          **/examples/*
+          **/build/*
+          **/phpunit.xml
 
-    - name: 🚀 Executar comandos no servidor via SSH
+    - name: 🚀 Configuração Remota
       run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.SERVER }} >> ~/.ssh/known_hosts
-
-        ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} << 'EOF'
+        ssh -i <(echo "${{ secrets.SSH_PRIVATE_KEY }}") \
+          -o StrictHostKeyChecking=no \
+          ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} <<EOF
         cd ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
 
-        echo "🔑 Criando arquivo .env..."
-        echo "${{ secrets.ENV_FILE }}" > .env
+        # Ambiente
+        [ -f .env ] || echo "${{ secrets.ENV_FILE }}" > .env
 
-        echo "📦 Instalando dependências..."
-        composer install --no-dev --optimize-autoloader
+        # Otimizações
+        php artisan config:cache
+        php artisan route:cache
+        php artisan view:cache
 
-        echo "🔄 Configurando ambiente..."
-        mkdir -p storage bootstrap/cache
-        php artisan storage:link
-        php artisan config:clear
-        php artisan cache:clear
-        php artisan route:clear
-        php artisan view:clear
-        php artisan optimize
+        # Permissões
+        chmod -R 775 storage bootstrap/cache
+        chown -R www-data:www-data storage bootstrap/cache
 
-        echo "🛠️ Aplicando permissões..."
-        chmod -R 775 storage bootstrap/cache public/storage
-        chown -R www-data:www-data storage bootstrap/cache public/storage
+        # Migrações
+        php artisan migrate --force --no-interaction
 
-        echo "🗄️ Migrando banco de dados..."
-        php artisan migrate --force
-
-        echo "✅ Deploy efetuado com sucesso!"
+        echo "🚀 Deploy concluído com sucesso!"
         EOF
