@@ -47,8 +47,11 @@ jobs:
         path: vendor
         key: composer-${{ hashFiles('composer.lock') }}
 
-    - name: 🔄 Atualizar npm
-      run: npm install -g npm@latest
+    - name: 🔄 Configurar Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18 # Use a versão estável mais recente
+        cache: 'npm'
 
     - name: 🌀 Cache do npm
       uses: actions/cache@v3
