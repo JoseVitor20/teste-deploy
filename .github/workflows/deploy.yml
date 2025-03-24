@@ -51,9 +51,7 @@ jobs:
           local-dir: ./
           exclude: |
             **/.git*  
-            **/.env*  
-            **/node_modules/*  
-            **/vendor/*
+            **/.env*
 
       - name: 🚀 Executar comandos no servidor via SSH
         run: |
