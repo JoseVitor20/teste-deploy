@@ -58,25 +58,33 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SERVER }} >> ~/.ssh/known_hosts
           ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} << 'EOF'
-          cd ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
-          echo "🔑 Removendo arquivo .env antigo..."
-          rm -f .env
-          echo "🔑 Criando arquivo .env..."
-          echo "${{ secrets.ENV_FILE }}" > .env
-          echo "📦 Instalando dependências..."
-          composer install --no-dev --optimize-autoloader
-          echo "🔄 Configurando ambiente..."
-          mkdir -p storage bootstrap/cache
-          php artisan storage:link
-          php artisan config:clear
-          php artisan cache:clear
-          php artisan route:clear
-          php artisan view:clear
-          php artisan optimize
-          echo "🛠️ Aplicando permissões..."
-          chmod -R 775 storage bootstrap/cache public/storage
-          chown -R www-data:www-data storage bootstrap/cache public/storage
-          echo "🗄️ Migrando banco de dados..."
-          php artisan migrate --force
-          echo "✅ Deploy efetuado com sucesso!"
+            cd ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+            echo "🔍 Verificando permissões do .env..."
+            ls -lah .env || echo "Nenhum .env encontrado"
+            
+            echo "🔑 Alterando permissões do .env..."
+            chmod 777 .env || echo "Falha ao alterar permissões"
+            
+            echo "🗑️ Tentando remover .env..."
+            rm -f .env || echo "Falha ao remover .env"
+
+            echo "🔄 Criando novo arquivo .env..."
+            echo "${{ secrets.ENV_FILE }}" > .env
+
+            echo "📦 Instalando dependências..."
+            composer install --no-dev --optimize-autoloader
+            echo "🔄 Configurando ambiente..."
+            mkdir -p storage bootstrap/cache
+            php artisan storage:link
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan route:clear
+            php artisan view:clear
+            php artisan optimize
+            echo "🛠️ Aplicando permissões..."
+            chmod -R 775 storage bootstrap/cache public/storage
+            chown -R www-data:www-data storage bootstrap/cache public/storage
+            echo "🗄️ Migrando banco de dados..."
+            php artisan migrate --force
+            echo "✅ Deploy efetuado com sucesso!"
           EOF
