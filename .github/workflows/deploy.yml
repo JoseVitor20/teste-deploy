@@ -51,7 +51,7 @@ jobs:
             **/.env*  
             **/node_modules/*  
             **/vendor/*
-      - name: 🚀 Executar comandos no servidor via SSH
+      - name: 🚀 Executar comandos no servidor via SSH teste 1
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
