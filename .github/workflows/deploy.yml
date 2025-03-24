@@ -63,15 +63,6 @@ jobs:
           ssh-keyscan -H ${{ secrets.SERVER }} >> ~/.ssh/known_hosts
           ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} << 'EOF'
           cd ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
-
-          # ------ Alterações Principais Aqui ------
-          echo "🔑 Substituindo/Criando arquivo .env..."
-          cat > .env << "ENV_EOF"
-          ${{ secrets.ENV_FILE }}
-          ENV_EOF
-          chmod 640 .env
-          # ----------------------------------------
-
           echo "📦 Instalando dependências..."
           composer install --no-dev --optimize-autoloader
           echo "🔄 Configurando ambiente..."
