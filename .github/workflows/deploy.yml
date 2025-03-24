@@ -2,79 +2,79 @@ name: Deploy Laravel para public_html via FTP
 on:
   push:
     branches:
-    - main
+      - main
 jobs:
   test:
     name: Executar Testes de back-end
     runs-on: ubuntu-latest
     steps:
-    - name: 📥 Obter código mais recente
-      uses: actions/checkout@v3
-    - name: 📦 Instalar dependências do Composer
-      run: composer install --prefer-dist --no-interaction --no-scripts
-    - name: 🛠️ Configurar ambiente de teste
-      run: cp .env.example .env && php artisan key:generate
-    - name: 📦 Instalar PHPUnit
-      run: composer require --dev phpunit/phpunit
-    - name: 🧪 Rodar testes
-      run: ./vendor/bin/phpunit
+      - name: 📥 Obter código mais recente
+        uses: actions/checkout@v3
+      - name: 📦 Instalar dependências do Composer
+        run: composer install --prefer-dist --no-interaction --no-scripts
+      - name: 🛠️ Configurar ambiente de teste
+        run: cp .env.example .env && php artisan key:generate
+      - name: 📦 Instalar PHPUnit
+        run: composer require --dev phpunit/phpunit
+      - name: 🧪 Rodar testes
+        run: ./vendor/bin/phpunit
   deploy:
     name: Deploy Laravel via FTP
     runs-on: ubuntu-latest
     needs: test # Somente roda se os testes passarem
     steps:
-    - name: 📥 Obter código mais recente
-      uses: actions/checkout@v3
-    - name: 🧹 Limpar cache do runner
-      run: rm -rf ~/.npm ~/.cache ~/.ssh
-    - name: 📦 Instalar dependências do NPM
-      run: npm install
-    - name: 🔨 Compilar assets do frontend (Vite ou Laravel Mix)
-      run: |
-        if [ -f "vite.config.js" ]; then
-          npm run build
-        elif [ -f "webpack.mix.js" ]; then
-          npm run prod
-        else
-          echo "Nenhuma configuração de build detectada. Pulando esta etapa."
-        fi
-    - name: 📂 Enviar arquivos via FTP
-      uses: SamKirkland/FTP-Deploy-Action@4.3.0
-      with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USER }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
-        local-dir: ./
-        exclude: |
-          **/.git*  # Testar removendo esta linha
-          **/.env*  # Testar removendo esta linha
-          **/node_modules/*  # Testar removendo esta linha
-          **/vendor/*  # Testar removendo esta linha
-    - name: 🚀 Executar comandos no servidor via SSH
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.SERVER }} >> ~/.ssh/known_hosts
-        ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} << 'EOF'
-        cd ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
-        echo "🔑 Criando arquivo .env..."
-        echo "${{ secrets.ENV_FILE }}" > .env
-        echo "📦 Instalando dependências..."
-        composer install --no-dev --optimize-autoloader
-        echo "🔄 Configurando ambiente..."
-        mkdir -p storage bootstrap/cache
-        php artisan storage:link
-        php artisan config:clear
-        php artisan cache:clear
-        php artisan route:clear
-        php artisan view:clear
-        php artisan optimize
-        echo "🛠️ Aplicando permissões..."
-        chmod -R 775 storage bootstrap/cache public/storage
-        chown -R www-data:www-data storage bootstrap/cache public/storage
-        echo "🗄️ Migrando banco de dados..."
-        php artisan migrate --force
-        echo "✅ Deploy efetuado com sucesso!"
-        EOF
+      - name: 📥 Obter código mais recente
+        uses: actions/checkout@v3
+      - name: 🧹 Limpar cache do runner
+        run: rm -rf ~/.npm ~/.cache ~/.ssh
+      - name: 📦 Instalar dependências do NPM
+        run: npm install
+      - name: 🔨 Compilar assets do frontend (Vite ou Laravel Mix)
+        run: |
+          if [ -f "vite.config.js" ]; then
+            npm run build
+          elif [ -f "webpack.mix.js" ]; then
+            npm run prod
+          else
+            echo "Nenhuma configuração de build detectada. Pulando esta etapa."
+          fi
+      - name: 📂 Enviar arquivos via FTP
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+          local-dir: ./
+          exclude: |
+            **/.git*  
+            **/.env*  
+            **/node_modules/*  
+            **/vendor/*
+      - name: 🚀 Executar comandos no servidor via SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER }} >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} << 'EOF'
+          cd ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+          echo "🔑 Criando arquivo .env..."
+          echo "${{ secrets.ENV_FILE }}" > .env
+          echo "📦 Instalando dependências..."
+          composer install --no-dev --optimize-autoloader
+          echo "🔄 Configurando ambiente..."
+          mkdir -p storage bootstrap/cache
+          php artisan storage:link
+          php artisan config:clear
+          php artisan cache:clear
+          php artisan route:clear
+          php artisan view:clear
+          php artisan optimize
+          echo "🛠️ Aplicando permissões..."
+          chmod -R 775 storage bootstrap/cache public/storage
+          chown -R www-data:www-data storage bootstrap/cache public/storage
+          echo "🗄️ Migrando banco de dados..."
+          php artisan migrate --force
+          echo "✅ Deploy efetuado com sucesso!"
+          EOF
