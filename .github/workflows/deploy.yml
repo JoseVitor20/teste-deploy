@@ -59,6 +59,8 @@ jobs:
           ssh-keyscan -H ${{ secrets.SERVER }} >> ~/.ssh/known_hosts
           ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} << 'EOF'
           cd ${{ secrets.HOSTGATOR_DEPLOY_DIR }}
+          echo "🔑 Removendo arquivo .env antigo..."
+          rm -f .env
           echo "🔑 Criando arquivo .env..."
           echo "${{ secrets.ENV_FILE }}" > .env
           echo "📦 Instalando dependências..."
