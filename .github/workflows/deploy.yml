@@ -27,7 +27,7 @@ jobs:
             **/node_modules/*
             **/.git/*
 
-      # Passo 3: Instalar o Laravel e dependências via SSH
+      # Passo 3: Instalar o Laravel e dependências via SSH teste
       - name: 🛠️ Instalar Laravel e configurar ambiente
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER }} << 'EOF'
